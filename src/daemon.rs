@@ -1,9 +1,9 @@
 use crate::notification::Hints;
+use crate::notification::Notification;
 use std::collections::HashMap;
 use std::error::Error;
 use zbus::dbus_interface;
 use zbus::Connection;
-use crate::notification::Notification;
 
 pub struct NotifyManager {
 	next_id: u32,
@@ -83,5 +83,14 @@ impl NotifyManager {
 			env!("CARGO_PKG_VERSION"),
 			"1.2",
 		]
+	}
+
+	fn list(&self, short: bool) -> String {
+		if short {
+			unreachable!()
+			// self.pendings.values().map(|x| x.summary).join("\n")
+		} else {
+			serde_json::to_string(&self.pendings).unwrap()
+		}
 	}
 }

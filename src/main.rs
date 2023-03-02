@@ -1,5 +1,6 @@
 mod daemon;
 mod notification;
+mod client;
 
 use clap::{Parser, Subcommand};
 use daemon::NotifyManager;
@@ -27,14 +28,22 @@ enum Command {
 		#[arg(short, long)]
 		clear: bool,
 	},
+
+	/// List pending notifications
+	List {
+		/// Use a quick overview instead of json, one notification per line
+		#[arg(short, long)]
+		short: bool,
+	},
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
 	let cli = Args::parse();
 
-	match &cli.command {
+	match cli.command {
 		Command::Daemon => NotifyManager::new().start().await,
+		Command::List { short } => client::list(short).await,
 		Command::Listen { .. } => unimplemented!(),
 	}
 }

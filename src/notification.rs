@@ -1,5 +1,7 @@
 use zbus::zvariant::{DeserializeDict, SerializeDict, Type};
+use serde::Serialize;
 
+#[derive(Serialize)]
 pub struct Notification {
 	pub app_name: String,
 	pub app_icon: String,
