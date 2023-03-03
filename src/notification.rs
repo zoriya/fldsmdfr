@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use zbus::zvariant::{DeserializeDict, SerializeDict, Type};
-use serde::Serialize;
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize, Type)]
 pub struct Notification {
+	pub id: u32,
 	pub app_name: String,
 	pub app_icon: String,
 	pub summary: String,
@@ -16,4 +17,19 @@ pub struct Notification {
 pub struct Hints {
 	category: Option<String>,
 	urgency: Option<u8>,
+}
+
+#[derive(Debug, Type, Serialize, Deserialize)]
+pub struct ServerInformation {
+	/// The product name of the server.
+	pub name: String,
+
+	/// The vendor name. For example "KDE," "GNOME," "freedesktop.org" or "Microsoft".
+	pub vendor: String,
+
+	/// The server's version number.
+	pub version: String,
+
+	/// The specification version the server is compliant with.
+	pub spec_version: String,
 }

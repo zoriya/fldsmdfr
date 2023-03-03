@@ -1,5 +1,6 @@
 use crate::notification::Hints;
 use crate::notification::Notification;
+use crate::notification::ServerInformation;
 use std::collections::HashMap;
 use std::error::Error;
 use zbus::dbus_interface;
@@ -50,6 +51,7 @@ impl NotifyManager {
 		self.pendings.insert(
 			self.next_id,
 			Notification {
+				id: self.next_id,
 				app_name,
 				app_icon,
 				summary,
@@ -76,21 +78,18 @@ impl NotifyManager {
 		]
 	}
 
-	fn get_server_information(&self) -> [&str; 4] {
-		[
-			env!("CARGO_PKG_NAME"),
-			"zoriya",
-			env!("CARGO_PKG_VERSION"),
-			"1.2",
-		]
+	fn get_server_information(&self) -> ServerInformation {
+		ServerInformation {
+			name: env!("CARGO_PKG_NAME").to_string(),
+			vendor: "zoriya".to_string(),
+			version: env!("CARGO_PKG_VERSION").to_string(),
+			spec_version: "1.2".to_string(),
+		}
 	}
 
-	fn list(&self, short: bool) -> String {
-		if short {
-			unreachable!()
-			// self.pendings.values().map(|x| x.summary).join("\n")
-		} else {
-			serde_json::to_string(&self.pendings).unwrap()
-		}
+	fn list(&self) -> Vec<&Notification> {
+		let mut ret: Vec<&Notification> = self.pendings.values().collect();
+		ret.sort_by(|a, b| a.id.cmp(&b.id));
+		ret
 	}
 }

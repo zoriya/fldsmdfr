@@ -1,5 +1,6 @@
-use std::error::Error;
-use zbus::{dbus_proxy, Connection};
+use zbus::{dbus_proxy, Connection, Result};
+
+use crate::{notification::Notification, Format};
 
 #[dbus_proxy(
 	default_service = "org.freedesktop.Notifications",
@@ -7,12 +8,22 @@ use zbus::{dbus_proxy, Connection};
 	default_path = "/org/freedesktop/Notifications"
 )]
 trait Manager {
-	fn list(&self, short: bool) -> zbus::Result<u32>;
+	fn list(&self) -> Result<Vec<Notification>>;
 }
 
-pub async fn list(short: bool) -> Result<(), Box<dyn Error>> {
+// TODO: strip \n on the short format.
+// TODO: html unescape dbus messages.
+pub async fn list(format: Format) -> Result<()> {
 	let connection = Connection::session().await?;
 	let proxy = ManagerProxy::new(&connection).await?;
-	println!("{}", proxy.list(short).await?);
+	let pendings = proxy.list().await?;
+	match format {
+		Format::Json => println!("{}", serde_json::to_string(&pendings).unwrap()),
+		Format::Short => {
+			for notif in &pendings {
+				println!("{}: {}", notif.summary, notif.body);
+			}
+		}
+	}
 	Ok(())
 }

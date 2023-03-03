@@ -1,8 +1,8 @@
+mod client;
 mod daemon;
 mod notification;
-mod client;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use daemon::NotifyManager;
 use std::error::Error;
 
@@ -31,10 +31,18 @@ enum Command {
 
 	/// List pending notifications
 	List {
-		/// Use a quick overview instead of json, one notification per line
-		#[arg(short, long)]
-		short: bool,
+		/// Select the format to display notifications.
+		#[arg(short, long, default_value = "short")]
+		format: Format,
 	},
+}
+
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Format {
+	/// A short, human-readable display.
+	Short,
+	/// A json object with every informations available
+	Json,
 }
 
 #[tokio::main]
@@ -43,7 +51,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 	match cli.command {
 		Command::Daemon => NotifyManager::new().start().await,
-		Command::List { short } => client::list(short).await,
+		Command::List { format } => client::list(format).await,
 		Command::Listen { .. } => unimplemented!(),
 	}
 }
