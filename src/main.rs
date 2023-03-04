@@ -8,6 +8,8 @@ use zbus::Result;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
+// TODO: Fix this replace that does not work.
+#[command(replace("-j", ["--format json"]))]
 struct Args {
 	#[command(subcommand)]
 	command: Command,
@@ -23,10 +25,6 @@ enum Command {
 		/// Select the format to display notifications.
 		#[arg(short, long, default_value = "short")]
 		format: Format,
-
-		/// Use json instead of plain-text
-		#[arg(short, long)]
-		json: bool,
 
 		/// Print an empty line/json object when the notification should clear.
 		#[arg(short, long)]
@@ -56,6 +54,6 @@ async fn main() -> Result<()> {
 	match cli.command {
 		Command::Daemon => NotifyManager::new().start().await,
 		Command::List { format } => client::list(format).await,
-		Command::Listen { format, .. } => client::listen(format).await,
+		Command::Listen { format, clear } => client::listen(format, clear).await,
 	}
 }

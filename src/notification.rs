@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{DeserializeDict, SerializeDict, Type};
 
-#[derive(Debug, Deserialize, Serialize, Type)]
+#[derive(Debug, Deserialize, Serialize, Type, Default)]
 pub struct Notification {
 	pub id: u32,
 	pub app_name: String,
@@ -12,7 +12,7 @@ pub struct Notification {
 	pub hints: Hints,
 }
 
-#[derive(Debug, DeserializeDict, SerializeDict, Type)]
+#[derive(Debug, DeserializeDict, SerializeDict, Type, Default)]
 #[zvariant(signature = "dict")]
 pub struct Hints {
 	category: Option<String>,

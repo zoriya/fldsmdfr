@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clap = { version = "4.1.8", features = ["derive"] }
+clap = { version = "4.1.8", features = ["derive", "unstable-replace"] }
 serde = "1.0.152"
 serde_json = "1.0.93"
 tokio = { version = "1", features = ["full"] }
