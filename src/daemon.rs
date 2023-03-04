@@ -2,9 +2,11 @@ use crate::notification::Hints;
 use crate::notification::Notification;
 use crate::notification::ServerInformation;
 use std::collections::HashMap;
-use std::error::Error;
 use zbus::dbus_interface;
 use zbus::Connection;
+use zbus::Result;
+use zbus::SignalContext;
+use zbus::fdo;
 
 pub struct NotifyManager {
 	next_id: u32,
@@ -19,7 +21,7 @@ impl NotifyManager {
 		}
 	}
 
-	pub async fn start(self) -> Result<(), Box<dyn Error>> {
+	pub async fn start(self) -> Result<()> {
 		let connection = Connection::session().await?;
 
 		connection
@@ -36,8 +38,9 @@ impl NotifyManager {
 
 #[dbus_interface(name = "org.freedesktop.Notifications")]
 impl NotifyManager {
-	fn notify(
+	async fn notify(
 		&mut self,
+		#[zbus(signal_context)] ctxt: SignalContext<'_>,
 		app_name: String,
 		replaces_id: u32,
 		app_icon: String,
@@ -46,25 +49,24 @@ impl NotifyManager {
 		actions: Vec<String>,
 		hints: Hints,
 		expire_timeout: i32,
-	) -> u32 {
+	) -> fdo::Result<u32> {
 		println!("{}: {}", summary, body);
-		self.pendings.insert(
-			self.next_id,
-			Notification {
-				id: self.next_id,
-				app_name,
-				app_icon,
-				summary,
-				body,
-				actions,
-				hints,
-			},
-		);
+		let notif = Notification {
+			id: self.next_id,
+			app_name,
+			app_icon,
+			summary,
+			body,
+			actions,
+			hints,
+		};
+		Self::new_notification(&ctxt, &notif).await?;
+		self.pendings.insert(self.next_id, notif);
 		if replaces_id == 0 {
 			self.next_id += 1;
-			self.next_id
+			Ok(self.next_id)
 		} else {
-			replaces_id
+			Ok(replaces_id)
 		}
 	}
 
@@ -86,6 +88,9 @@ impl NotifyManager {
 			spec_version: "1.2".to_string(),
 		}
 	}
+
+	#[dbus_interface(signal)]
+	async fn new_notification(ctxt: &SignalContext<'_>, notif: &Notification) -> Result<()>;
 
 	fn list(&self) -> Vec<&Notification> {
 		let mut ret: Vec<&Notification> = self.pendings.values().collect();

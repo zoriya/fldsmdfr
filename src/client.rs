@@ -1,4 +1,4 @@
-use zbus::{dbus_proxy, Connection, Result};
+use zbus::{dbus_proxy, export::ordered_stream::OrderedStreamExt, Connection, Result};
 
 use crate::{notification::Notification, Format};
 
@@ -9,6 +9,29 @@ use crate::{notification::Notification, Format};
 )]
 trait Manager {
 	fn list(&self) -> Result<Vec<Notification>>;
+
+	#[dbus_proxy(signal)]
+	fn new_notification(&self, notif: Notification) -> fdo::Result<Notification>;
+}
+
+pub async fn listen(format: Format) -> Result<()> {
+	let connection = Connection::session().await?;
+	let manager = ManagerProxy::new(&connection).await?;
+	// let props = zbus::fdo::PropertiesProxy::builder(&connection)
+	// 	.destination("org.freedesktop.Notifications")?
+	// 	.path("/org/freedesktop/Notifications")?
+	// 	.build()
+	// 	.await?;
+	let mut stream = manager.receive_new_notification().await?;
+	while let Some(notif) = stream.next().await {
+		let notif = notif.args()?.notif;
+		match format {
+			Format::Json => println!("{}", serde_json::to_string(&notif).unwrap()),
+			Format::Short => println!("{}: {}", notif.summary, notif.body),
+		};
+	}
+
+	Ok(())
 }
 
 // TODO: strip \n on the short format.

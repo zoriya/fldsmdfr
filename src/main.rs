@@ -4,7 +4,7 @@ mod notification;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use daemon::NotifyManager;
-use std::error::Error;
+use zbus::Result;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -20,6 +20,10 @@ enum Command {
 
 	/// Listen to new notifications.
 	Listen {
+		/// Select the format to display notifications.
+		#[arg(short, long, default_value = "short")]
+		format: Format,
+
 		/// Use json instead of plain-text
 		#[arg(short, long)]
 		json: bool,
@@ -46,12 +50,12 @@ pub enum Format {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
+async fn main() -> Result<()> {
 	let cli = Args::parse();
 
 	match cli.command {
 		Command::Daemon => NotifyManager::new().start().await,
 		Command::List { format } => client::list(format).await,
-		Command::Listen { .. } => unimplemented!(),
+		Command::Listen { format, .. } => client::listen(format).await,
 	}
 }
