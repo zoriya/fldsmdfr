@@ -1,6 +1,7 @@
 mod client;
 mod daemon;
 mod notification;
+mod dbox;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use daemon::NotifyManager;

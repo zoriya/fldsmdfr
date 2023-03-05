@@ -1,7 +1,8 @@
-use serde::{Deserialize, Serialize};
-use zbus::zvariant::{DeserializeDict, SerializeDict, Type};
+use serde::{Deserialize, Serialize, Serializer};
+use zbus::zvariant::{self, DeserializeDict, SerializeDict, Type};
 
-#[derive(Debug, Deserialize, Serialize, Type, Default)]
+#[derive(Debug, Deserialize, Serialize, Type, Default, Clone)]
+#[zvariant(signature = "dict")]
 pub struct Notification {
 	pub id: u32,
 	pub app_name: String,
@@ -9,14 +10,23 @@ pub struct Notification {
 	pub summary: String,
 	pub body: String,
 	pub actions: Vec<String>,
-	pub hints: Hints,
+	pub expire_timeout: Option<u32>,
+	pub urgency: Option<u8>,
+	pub category: Option<String>,
+}
+
+impl<'a> From<zvariant::Value<'a>> for Notification {
+	fn from(value: zvariant::Value<'a>) -> Self {
+		println!("{:?}", value);
+		todo!()
+	}
 }
 
 #[derive(Debug, DeserializeDict, SerializeDict, Type, Default)]
 #[zvariant(signature = "dict")]
 pub struct Hints {
-	category: Option<String>,
-	urgency: Option<u8>,
+	pub category: Option<String>,
+	pub urgency: Option<u8>,
 }
 
 #[derive(Debug, Type, Serialize, Deserialize)]
@@ -32,4 +42,13 @@ pub struct ServerInformation {
 
 	/// The specification version the server is compliant with.
 	pub spec_version: String,
+}
+
+#[derive(Debug, Type, Serialize, Deserialize)]
+#[repr(i32)]
+pub enum CloseReason {
+	Expired,
+	Dismissed,
+	Manual,
+	Undefined,
 }

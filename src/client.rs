@@ -1,12 +1,10 @@
-use std::{
-	future::{self, Future},
-	time::Duration, pin::Pin,
+use std::time::Duration;
+use tokio::{
+	select,
+	time::{sleep, Sleep},
 };
-
-use tokio::{select, time::{sleep, Sleep}};
 use zbus::{dbus_proxy, export::ordered_stream::OrderedStreamExt, Connection, Result};
-
-use crate::{notification::Notification, Format};
+use crate::{dbox::DBox, notification::Notification, Format};
 
 #[dbus_proxy(
 	default_service = "org.freedesktop.Notifications",
@@ -14,10 +12,10 @@ use crate::{notification::Notification, Format};
 	default_path = "/org/freedesktop/Notifications"
 )]
 trait Manager {
-	fn list(&self) -> Result<Vec<Notification>>;
+	fn list(&self) -> Result<DBox<Vec<Notification>>>;
 
 	#[dbus_proxy(signal)]
-	fn new_notification(&self, notif: Notification) -> fdo::Result<Notification>;
+	fn new_notification(&self, notif: DBox<Notification>) -> fdo::Result<Notification>;
 }
 
 pub async fn listen(format: Format, clear: bool) -> Result<()> {
@@ -31,7 +29,7 @@ pub async fn listen(format: Format, clear: bool) -> Result<()> {
 		clearer = sleep(Duration::from_secs(8));
 		select! {
 			Some(notif) = stream.next() => {
-				let notif = notif.args()?.notif;
+				let notif = notif.args()?.notif.unwrap();
 				match format {
 					Format::Json => println!("{}", serde_json::to_string(&notif).unwrap()),
 					Format::Short => println!("{}: {}", notif.summary, notif.body),
@@ -58,7 +56,7 @@ pub async fn listen(format: Format, clear: bool) -> Result<()> {
 pub async fn list(format: Format) -> Result<()> {
 	let connection = Connection::session().await?;
 	let proxy = ManagerProxy::new(&connection).await?;
-	let pendings = proxy.list().await?;
+	let pendings = proxy.list().await?.unwrap();
 	match format {
 		Format::Json => println!("{}", serde_json::to_string(&pendings).unwrap()),
 		Format::Short => {
