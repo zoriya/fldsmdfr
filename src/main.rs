@@ -1,9 +1,10 @@
 mod client;
 mod daemon;
+mod manager;
 mod notification;
 
 use clap::{Parser, Subcommand, ValueEnum};
-use daemon::NotifyManager;
+use manager::NotifyManager;
 use zbus::Result;
 
 #[derive(Parser)]
@@ -52,7 +53,11 @@ async fn main() -> Result<()> {
 	let cli = Args::parse();
 
 	match cli.command {
-		Command::Daemon => NotifyManager::new().start().await,
+		Command::Daemon => {
+			let manager = NotifyManager::new();
+			manager.start().await?;
+			manager.listen().await
+		},
 		Command::List { format } => client::list(format).await,
 		Command::Listen { format, clear } => client::listen(format, clear).await,
 	}

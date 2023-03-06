@@ -1,9 +1,9 @@
-use std::{
-	future::{self, Future},
-	time::Duration, pin::Pin,
-};
+use std::time::Duration;
 
-use tokio::{select, time::{sleep, Sleep}};
+use tokio::{
+	select,
+	time::{sleep, Sleep},
+};
 use zbus::{dbus_proxy, export::ordered_stream::OrderedStreamExt, Connection, Result};
 
 use crate::{notification::Notification, Format};
